@@ -156,8 +156,8 @@ try {
 - ApiClient::**editAccountInfo**(*Account* $account): *Account*
 - ApiClient::**getAccountInfo**(): *Account*
 - ApiClient::**revokeAccessToken**(): *Account*
-- ApiClient::**createPage**(*string* \$title, *NodeElement[]|string* \$content, *null|string* \$authorName = null, *null|string* \$authorUrl = null): *Page*
-- ApiClient::**editPage**(*string* \$path, *string* \$title, *NodeElement[]|string* \$content, *null|string* \$authorName = null, *null|string* \$authorUrl = null): *Page*
+- ApiClient::**createPage**(*string* \$title, *NodeElement[]|string* \$content, *?string* \$authorName = null, *?string* \$authorUrl = null): *Page*
+- ApiClient::**editPage**(*string* \$path, *string* \$title, *NodeElement[]|string* \$content, *?string* \$authorName = null, *?string* \$authorUrl = null): *Page*
 - ApiClient::**getPage**(*string* $path): *Page*
 - ApiClient::**getPageList**(*int* \$offset = 0, *int* \$limit = 50): *PageList*
 - ApiClient::**getViews**(*string* $path, *?GetViewsParams* \$params): *PageViews*
@@ -168,6 +168,8 @@ try {
 - Parser::**addTagReplaceRules**(*array* $rules): *Parser*
 - Parser::**hasTagReplaceRule**(*string* $tag): *bool*
 - Parser::**getTagReplaceRule**(*string* $tag): *string|false|null*
+- Parser::**setAllowedAttributes**(*?string[]* $attributes): *Parser*
+- Parser::**setDisallowedAttributes**(*string[]* $attributes): *Parser*
 - Parser::**htmlToTelegraphContent**(*string* $html): *NodeElement[]|string[]*
 - Parser::**telegraphContentToHtml**(*NodeElement[]* $content): *string*
 - Parser::**decodeTelegraphContent**(*string* $json): *NodeElement[]*
