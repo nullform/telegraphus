@@ -31,6 +31,16 @@ class Parser
     protected $tagReplaceRules = [];
 
     /**
+     * @var string[]|null
+     */
+    protected $allowedAttributes = null;
+
+    /**
+     * @var string[]
+     */
+    protected $disallowedAttributes = [];
+
+    /**
      * Add rule to replace tag.
      *
      * @param string $tag Tag to be replaced.
@@ -71,7 +81,7 @@ class Parser
      * @throws ParserInvalidTagReplaceRule
      * @uses Parser::addTagReplaceRule()
      */
-    public function addTagReplaceRules(array $rules)
+    public function addTagReplaceRules($rules)
     {
         foreach ($rules as $tag => $toTag) {
             $this->addTagReplaceRule($tag, $toTag);
@@ -104,6 +114,32 @@ class Parser
     public function getTagReplaceRule($tag)
     {
         return $this->hasTagReplaceRule($tag) ? $this->tagReplaceRules[(string)$tag] : null;
+    }
+
+    /**
+     * List of allowed tag attributes. Other attributes will be filtered.
+     *
+     * @param string[]|null $attributes Null - disable the allowed attributes filter.
+     * @return $this
+     */
+    public function setAllowedAttributes($attributes)
+    {
+        $this->allowedAttributes = \is_null($attributes) ?: $this->prepareListOfAttributes($attributes);
+
+        return $this;
+    }
+
+    /**
+     * List of attributes to be filtered.
+     *
+     * @param string[] $attributes
+     * @return $this
+     */
+    public function setDisallowedAttributes($attributes)
+    {
+        $this->disallowedAttributes = $this->prepareListOfAttributes($attributes);
+
+        return $this;
     }
 
     /**
@@ -144,7 +180,12 @@ class Parser
                 if ($node->attributes->count()) {
                     $nodeElement->attrs = [];
                     foreach ($node->attributes as $name => $attrNode) {
-                        $nodeElement->attrs[$name] = $attrNode->nodeValue;
+                        if ($this->isAttributeAllowed($name)) {
+                            $nodeElement->attrs[$name] = $attrNode->nodeValue;
+                        }
+                    }
+                    if (!$nodeElement->attrs) {
+                        $nodeElement->attrs = null;
                     }
                 }
 
@@ -289,7 +330,9 @@ class Parser
             }
             if ($source instanceof NodeElement && !empty($source->attrs)) {
                 foreach ($source->attrs as $key => $value) {
-                    $node->setAttribute($key, $value);
+                    if ($this->isAttributeAllowed($key)) {
+                        $node->setAttribute($key, $value);
+                    }
                 }
             }
             if ($parentNode) {
@@ -312,5 +355,34 @@ class Parser
     protected function createDefaultDomDocument()
     {
         return new \DOMDocument('1.0', 'utf-8');
+    }
+
+    /**
+     * @param string[] $attributes
+     * @return string[]
+     */
+    protected function prepareListOfAttributes($attributes)
+    {
+        $attributes = (array)$attributes;
+
+        $attributes = \array_map(function ($attribute) {
+            return \trim(\strtolower((string)$attribute));
+        }, $attributes);
+
+        $attributes = \array_filter($attributes);
+
+        return \array_unique($attributes);
+    }
+
+    /**
+     * @param string $attribute
+     * @return bool
+     */
+    protected function isAttributeAllowed($attribute)
+    {
+        $attribute = \strtolower((string)$attribute);
+
+        return (\is_null($this->allowedAttributes) || \in_array($attribute, $this->allowedAttributes))
+            && !\in_array($attribute, $this->disallowedAttributes);
     }
 }

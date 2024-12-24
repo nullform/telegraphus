@@ -17,17 +17,19 @@ class ParserTest extends TestCase
     public function testHtmlToTelegraphContent()
     {
         $html = '<h1>Title</h1>';
-        $html .= '<p>First paragraph</p>';
+        $html .= '<p style="text-align: center;">First paragraph</p>';
         $html .= '<p>Second paragraph</p>';
-        $html .= '<p>Third <b>paragraph</b> with <a href="https://www.google.com/">link</a>.</p>';
+        $html .= '<p>Third <b>paragraph</b> with <a href="https://www.google.com/" title="Google">link</a>.</p>';
         $html .= '<footer>Copyright</footer>';
 
         $parser = $this->getParser();
+        $parser->setAllowedAttributes(['href', 'src']);
         $content = $parser->htmlToTelegraphContent($html);
 
         $this->assertTrue(\is_array($content));
         $this->assertCount(5, $content);
         $this->assertTrue($content[0]->tag == 'h1');
+        $this->assertNull($content[0]->attrs);
         $this->assertTrue($content[1]->tag == 'p');
         $this->assertTrue($content[2]->tag == 'p');
         $this->assertTrue($content[3]->tag == 'p');
@@ -38,6 +40,9 @@ class ParserTest extends TestCase
         $this->assertInstanceOf(NodeElement::class, $content[3]->children[1]);
         $this->assertTrue(\is_string($content[3]->children[2]));
         $this->assertInstanceOf(NodeElement::class, $content[3]->children[3]);
+        $this->assertCount(1, $content[3]->children[3]->attrs);
+        $this->assertArrayHasKey('href', $content[3]->children[3]->attrs);
+        $this->assertArrayNotHasKey('title', $content[3]->children[3]->attrs);
         $this->assertTrue(\is_string($content[3]->children[4]));
     }
 
@@ -70,13 +75,13 @@ class ParserTest extends TestCase
     public function testTagReplaceRules()
     {
         $sourceHtml = '<h1>Title</h1>';
-        $sourceHtml .= '<div>First paragraph</div>';
-        $sourceHtml .= '<div>Second <span>paragraph</span></div>';
+        $sourceHtml .= '<div class="p">First paragraph</div>';
+        $sourceHtml .= '<div title="title">Second <span id="span">paragraph</span></div>';
         $sourceHtml .= '<footer>Copyright</footer>';
 
         $targetHtml = '<h3>Title</h3>';
         $targetHtml .= '<p>First paragraph</p>';
-        $targetHtml .= '<p>Second <b>paragraph</b></p>';
+        $targetHtml .= '<p title="title">Second <b>paragraph</b></p>';
 
         $parser = $this->getParser();
         $parser->addTagReplaceRules([
@@ -85,6 +90,7 @@ class ParserTest extends TestCase
             'span'   => 'b',
             'footer' => false,
         ]);
+        $parser->setDisallowedAttributes(['class', 'id']);
         $content = $parser->htmlToTelegraphContent($sourceHtml);
         $html = $parser->telegraphContentToHtml($content);
 
